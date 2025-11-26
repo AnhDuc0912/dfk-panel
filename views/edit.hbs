@@ -1,0 +1,9 @@
+<h2>Edit: /{{relPath}}</h2>
+<form method="post" action="/file/save">
+  <input type="hidden" name="path" value="{{relPath}}">
+  <textarea name="content" rows="24" style="width:100%;font-family:monospace">{{content}}</textarea>
+  <div style="margin-top:.5rem">
+    <button>Save</button>
+    <a class="button" href="/browse/{{encodeURIComponent parentRel}}">Back</a>
+  </div>
+</form>

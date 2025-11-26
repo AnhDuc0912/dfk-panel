@@ -1,0 +1,11 @@
+<h2>Nginx</h2>
+<p>Config path: <strong>{{nginxConfPath}}</strong></p>
+<form method="post" action="/nginx/reload" onsubmit="return confirm('Reload nginx?')">
+  <button>Reload Nginx (cmd: {{nginxReloadCmd}})</button>
+</form>
+<h3>Config File</h3>
+{{#if error}}
+  <pre class="error">{{content}}</pre>
+{{else}}
+  <pre class="code">{{content}}</pre>
+{{/if}}

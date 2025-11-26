@@ -1,0 +1,22 @@
+<h2>Browsing: /{{relPath}}</h2>
+<form method="post" action="/file/create" style="margin-bottom:1rem">
+  <input type="hidden" name="path" value="{{relPath}}">
+  <input name="name" placeholder="Name (file or dir)">
+  <select name="type"><option value="file">File</option><option value="dir">Directory</option></select>
+  <button>Create</button>
+</form>
+
+<ul class="items">
+  {{#if relPath}}
+    <li class="dir"><a href="/browse/{{encodeURIComponent parentRel}}">.. (parent)</a></li>
+  {{/if}}
+  {{#each list}}
+    <li class="{{#if isDirectory}}dir{{else}}file{{/if}}">
+      <a href="{{href}}">{{#if isDirectory}}📁 {{else}}📄 {{/if}}{{name}}</a>
+      <form method="post" action="/file/delete" class="inline">
+        <input type="hidden" name="path" value="{{rel}}">
+        <button class="danger">Delete</button>
+      </form>
+    </li>
+  {{/each}}
+</ul>

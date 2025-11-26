@@ -1,0 +1,14 @@
+body { font-family: Inter, system-ui, -apple-system, Arial, sans-serif; margin: 0; padding: 0; }
+header { background: #0b5cff; color: white; padding: 1rem; }
+header h1 { margin: 0; display:inline-block }
+header nav { display:inline-block; margin-left:1rem }
+main { padding: 1rem; }
+ul.items { list-style: none; padding-left: 0 }
+ul.items li { padding: .25rem 0; display:flex; gap:.5rem; align-items:center }
+form.inline { margin-left: auto }
+.danger { background: #ff6b6b; color: white; border: none; padding: .25rem .5rem }
+.button { margin-left: .5rem }
+pre.code { background:#f6f8fa; padding:1rem; overflow:auto }
+pre.error { background:#ffecec; color:#900; padding:1rem }
+textarea { box-sizing: border-box }
+footer { padding: .5rem 1rem; border-top: 1px solid #eee; color:#666 }
