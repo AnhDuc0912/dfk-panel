@@ -5,6 +5,7 @@ const fs = require('fs');
 const { exec } = require('child_process');
 
 const exphbs = require('express-handlebars');
+const multer = require('multer');
 const app = express();
 
 const PORT = process.env.PORT || 3333;
@@ -25,6 +26,29 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use('/static', express.static(path.join(__dirname, 'public')));
+
+// Multer storage that writes uploads into the resolved path under ROOT_DIR
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const rel = req.body.path || '';
+    let abs;
+    try {
+      abs = safeResolve(rel);
+    } catch (e) {
+      return cb(new Error('Invalid upload path'));
+    }
+    try {
+      fs.mkdirSync(abs, { recursive: true });
+    } catch (err) {
+      return cb(err);
+    }
+    cb(null, abs);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  }
+});
+const upload = multer({ storage });
 
 function safeResolve(relPath = '') {
   const requested = path.normalize(relPath).replace(/^\/+/, '');
@@ -129,6 +153,13 @@ app.post('/file/create', (req, res) => {
       res.redirect('/browse/' + path.posix.join(relDir, name));
     });
   }
+});
+
+// Upload files to a directory inside ROOT_DIR. field name: `files` (multiple allowed)
+app.post('/file/upload', upload.array('files'), (req, res) => {
+  const relDir = req.body.path || '';
+  // multer already stored files; if any error, middleware would have failed
+  res.redirect('/browse/' + relDir);
 });
 
 app.post('/file/delete', (req, res) => {
