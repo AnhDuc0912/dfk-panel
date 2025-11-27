@@ -117,7 +117,10 @@ app.post('/file/create', (req, res) => {
   const target = path.join(absDir, name);
   if (type === 'dir') {
     fs.mkdir(target, { recursive: true }, (err) => {
-      if (err) return res.status(500).send('Unable to create dir');
+      if (err) {
+        console.error('mkdir error:', err);
+        return res.status(500).send('Unable to create dir: ' + err.message);
+      }
       res.redirect('/browse/' + relDir);
     });
   } else {
