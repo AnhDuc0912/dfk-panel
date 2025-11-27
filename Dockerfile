@@ -7,7 +7,7 @@ COPY package*.json ./
 
 # Copy app
 COPY . .
-
+RUN npm install
 # Use the built-in non-root node user where possible
 USER node
 
