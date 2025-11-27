@@ -6,7 +6,7 @@ services:
     ports:
       - "${PORT:-3333}:3333"
     environment:
-      - ROOT_DIR=/data
+      - ROOT_DIR=/repos
       - PORT=3333
       - NGINX_CONF=/etc/nginx/nginx.conf
       - NGINX_RELOAD_CMD=nginx -s reload
