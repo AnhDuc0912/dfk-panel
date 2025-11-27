@@ -12,4 +12,4 @@ RUN npm install
 USER node
 
 EXPOSE 3333
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
