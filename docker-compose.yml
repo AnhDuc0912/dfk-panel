@@ -4,14 +4,12 @@ services:
   dfkpanel:
     build: .
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3333}:3333"
     environment:
       - ROOT_DIR=/data
-      - PORT=3000
+      - PORT=3333
       - NGINX_CONF=/etc/nginx/nginx.conf
       - NGINX_RELOAD_CMD=nginx -s reload
-    # IMPORTANT: bind-mount a host directory to /srv/repos so create operations inside
-    # the container create files/directories on the native host.
     volumes:
       - "${HOST_REPO_DIR:-./repos}:/srv/repos:rw"
     restart: unless-stopped
