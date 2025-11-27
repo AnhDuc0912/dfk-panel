@@ -60,4 +60,13 @@ HOST_REPO_DIR=/home/you/dfk-repos docker compose up --build -d
 Notes
 - Files and folders created from the panel inside `/srv/repos` will be created on the host path you bind-mounted.
 - If you run into permission issues when creating files on the host, you can run the container as a different user or adjust file permissions on the host directory.
+ - Files and folders created from the panel inside the configured `ROOT_DIR` (e.g. `/data`) will be created on the host path you bind-mounted.
+ - If you run into permission issues when creating files on the host, fix permissions on the host directory so the container's user can write to it. Example (Linux):
+
+```bash
+# set ownership to your user (replace 1000:1000 with your UID:GID if different)
+sudo chown -R 1000:1000 /path/to/host/data
+```
+
+Or run the container as `root` (less secure) by adding `user: root` under the service in `docker-compose.yml`.
 
