@@ -11,5 +11,12 @@ services:
       - NGINX_CONF=/etc/nginx/nginx.conf
       - NGINX_RELOAD_CMD=nginx -s reload
     volumes:
-      - "${HOST_REPO_DIR:-./repos}:/srv/repos:rw"
+      # Mount host folder to the same path used by ROOT_DIR to avoid permission errors
+      # You can set HOST_REPO_DIR (env var) to an absolute host path before running compose.
+      # Examples:
+      #  - Windows (PowerShell): set $env:HOST_REPO_DIR = 'F:/Freelance/DFKPanel/repos'
+      #  - Linux/macOS: export HOST_REPO_DIR=/home/you/dfkpanel/repos
+      # The default falls back to a relative `./repos` directory in the project root.
+      - "${HOST_REPO_DIR:-./repos}:/repos:rw"
+    user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped
