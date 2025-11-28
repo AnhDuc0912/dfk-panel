@@ -3,20 +3,19 @@ version: '3.8'
 services:
   dfkpanel:
     build: .
+    env_file:
+      - .env
     ports:
       - "${PORT:-3333}:3333"
-    environment:
-      - ROOT_DIR=/repos
-      - PORT=3333
-      - NGINX_CONF=/etc/nginx/nginx.conf
-      - NGINX_RELOAD_CMD=nginx -s reload
+    # Environment variables are loaded from .env via `env_file` above.
+    # They will be available inside the container automatically without listing them here.
     volumes:
-      # Mount host folder to the same path used by ROOT_DIR to avoid permission errors
-      # You can set HOST_REPO_DIR (env var) to an absolute host path before running compose.
-      # Examples:
-      #  - Windows (PowerShell): set $env:HOST_REPO_DIR = 'F:/Freelance/DFKPanel/repos'
-      #  - Linux/macOS: export HOST_REPO_DIR=/home/you/dfkpanel/repos
-      # The default falls back to a relative `./repos` directory in the project root.
-      - "${HOST_REPO_DIR:-./repos}:/repos:rw"
+      # Mount host folder to the same path used by ROOT_DIR so files created from the UI appear on host.
+      # Set HOST_REPO_DIR to an absolute host path to control where host files are stored.
+      # Default host path falls back to ./repos and is mounted to the container path given by ROOT_DIR.
+      - "${HOST_REPO_DIR:-./repos}:${ROOT_DIR:-./repos}:rw"
+      # Optionally bind a host path for NGINX_SITES_DIR if you want the panel to write there.
+      # To enable, set HOST_SITES_DIR in .env and uncomment the following line.
+      # - "${HOST_SITES_DIR}:${NGINX_SITES_DIR:-/etc/nginx/sites-enabled}"
     user: "${UID:-1000}:${GID:-1000}"
     restart: unless-stopped

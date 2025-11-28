@@ -130,7 +130,17 @@ router.post('/nginx/create-site', (req, res) => {
 
     exec(copyCmd, { timeout: 15_000 }, (cErr, cOut, cErrOut) => {
       if (cErr) {
-        return res.status(500).send(`Failed to copy config into place: ${cErr.message}\n${cErrOut || ''}`);
+        // If automatic copy fails (permissions, filesystem), provide a safe manual install command
+        const sudoPrefix = USE_SUDO ? 'sudo ' : '';
+        const installCmds = [];
+        installCmds.push(`${sudoPrefix}cp "${tmpPath}" "${targetPath}"`);
+        installCmds.push(`${sudoPrefix}chown root:root "${targetPath}" || true`);
+        installCmds.push(`${sudoPrefix}chmod 644 "${targetPath}" || true`);
+        installCmds.push(`${sudoPrefix}${NGINX_TEST_CMD}`);
+        installCmds.push(`${sudoPrefix}${NGINX_RELOAD_CMD} || ${sudoPrefix}${NGINX_FALLBACK_RELOAD}`);
+
+        const message = [`Automatic install failed: ${cErr.message}`, cErrOut || '', '', 'I wrote the config to a temporary file:', tmpPath, '', 'Run the following commands on the host to install and reload nginx:','', ...installCmds].join('\n');
+        return res.status(200).send(message);
       }
 
       // set ownership and permissions (best effort)
