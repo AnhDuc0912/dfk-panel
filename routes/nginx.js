@@ -122,46 +122,80 @@ router.post('/nginx/create-site', (req, res) => {
     return res.status(500).send(`Failed writing temp file: ${werr.message}`);
   }
 
-  // copy into place (use sudo if configured)
-  const copyCmd = maybeSudo(`cp "${tmpPath}" "${targetPath}"`);
-  const chownCmd = maybeSudo(`chown root:root "${targetPath}"`);
-  const chmodCmd = maybeSudo(`chmod 644 "${targetPath}"`);
+  // Ensure the target sites directory exists. Try local mkdir first, then sudo mkdir -p as fallback.
+  function performInstall() {
+    const copyCmd = maybeSudo(`cp "${tmpPath}" "${targetPath}"`);
+    const chownCmd = maybeSudo(`chown root:root "${targetPath}"`);
+    const chmodCmd = maybeSudo(`chmod 644 "${targetPath}"`);
 
-  exec(copyCmd, { timeout: 15_000 }, (cErr, cOut, cErrOut) => {
-    if (cErr) {
-      return res.status(500).send(`Failed to copy config into place: ${cErr.message}\n${cErrOut || ''}`);
-    }
+    exec(copyCmd, { timeout: 15_000 }, (cErr, cOut, cErrOut) => {
+      if (cErr) {
+        return res.status(500).send(`Failed to copy config into place: ${cErr.message}\n${cErrOut || ''}`);
+      }
 
-    // set ownership and permissions (best effort)
-    exec(chownCmd, { timeout: 5_000 }, () => {
-      exec(chmodCmd, { timeout: 5_000 }, () => {
-        // After file placed, test + reload (reuse existing test/reload flow)
-        const testCmd = maybeSudo(NGINX_TEST_CMD);
-        exec(testCmd, { timeout: 10_000 }, (testErr, testOut, testErrOut) => {
-          if (testErr) {
-            return res.status(500).send(`Nginx config test failed after creating site: ${testErr.message}\n${testErrOut || ''}`);
-          }
-
-          const reloadCmd = maybeSudo(NGINX_RELOAD_CMD);
-          exec(reloadCmd, { timeout: 10_000 }, (reloadErr, reloadOut, reloadErrOut) => {
-            if (!reloadErr) {
-              return res.send(`Site created and nginx reloaded:\n${targetPath}\n\n${testOut || ''}\n${reloadOut || ''}`);
+      // set ownership and permissions (best effort)
+      exec(chownCmd, { timeout: 5_000 }, () => {
+        exec(chmodCmd, { timeout: 5_000 }, () => {
+          // After file placed, test + reload (reuse existing test/reload flow)
+          const testCmd = maybeSudo(NGINX_TEST_CMD);
+          exec(testCmd, { timeout: 10_000 }, (testErr, testOut, testErrOut) => {
+            if (testErr) {
+              return res.status(500).send(`Nginx config test failed after creating site: ${testErr.message}\n${testErrOut || ''}`);
             }
 
-            // fallback
-            const fallbackCmd = maybeSudo(NGINX_FALLBACK_RELOAD);
-            exec(fallbackCmd, { timeout: 10_000 }, (fbErr, fbOut, fbErrOut) => {
-              if (!fbErr) {
-                return res.send(`Site created and nginx reloaded (fallback):\n${targetPath}\n\n${testOut || ''}\n${fbOut || ''}`);
+            const reloadCmd = maybeSudo(NGINX_RELOAD_CMD);
+            exec(reloadCmd, { timeout: 10_000 }, (reloadErr, reloadOut, reloadErrOut) => {
+              if (!reloadErr) {
+                return res.send(`Site created and nginx reloaded:\n${targetPath}\n\n${testOut || ''}\n${reloadOut || ''}`);
               }
-              const combined = `Site created at ${targetPath} but reload failed. test: ok; reload: ${reloadErr.message}; fallback: ${fbErr.message}\n\nstdout:\n${testOut || ''}\n${reloadOut || ''}\n${fbOut || ''}\n\nstderr:\n${testErrOut || ''}\n${reloadErrOut || ''}\n${fbErrOut || ''}`;
-              return res.status(500).send(combined);
+
+              // fallback
+              const fallbackCmd = maybeSudo(NGINX_FALLBACK_RELOAD);
+              exec(fallbackCmd, { timeout: 10_000 }, (fbErr, fbOut, fbErrOut) => {
+                if (!fbErr) {
+                  return res.send(`Site created and nginx reloaded (fallback):\n${targetPath}\n\n${testOut || ''}\n${fbOut || ''}`);
+                }
+                const combined = `Site created at ${targetPath} but reload failed. test: ok; reload: ${reloadErr.message}; fallback: ${fbErr.message}\n\nstdout:\n${testOut || ''}\n${reloadOut || ''}\n${fbOut || ''}\n\nstderr:\n${testErrOut || ''}\n${reloadErrOut || ''}\n${fbErrOut || ''}`;
+                return res.status(500).send(combined);
+              });
             });
           });
         });
       });
     });
-  });
+  }
+
+  try {
+    if (!fs.existsSync(sitesDir)) {
+      try {
+        // try to create without sudo
+        fs.mkdirSync(sitesDir, { recursive: true });
+      } catch (mkErr) {
+        // fallback to sudo mkdir -p
+        const mkdirCmd = maybeSudo(`mkdir -p "${sitesDir}"`);
+        exec(mkdirCmd, { timeout: 8000 }, (mErr, mOut, mErrOut) => {
+          if (mErr) {
+            return res.status(500).send(`Failed to create sites directory ${sitesDir}: ${mErr.message}\n${mErrOut || ''}`);
+          }
+          performInstall();
+        });
+        return;
+      }
+    }
+  } catch (e) {
+    // if existsSync threw, try sudo mkdir
+    const mkdirCmd = maybeSudo(`mkdir -p "${sitesDir}"`);
+    exec(mkdirCmd, { timeout: 8000 }, (mErr, mOut, mErrOut) => {
+      if (mErr) {
+        return res.status(500).send(`Failed to ensure sites directory ${sitesDir}: ${mErr.message}\n${mErrOut || ''}`);
+      }
+      performInstall();
+    });
+    return;
+  }
+
+  // directory exists (or was created synchronously) — proceed
+  performInstall();
 });
 
 // mark task done
