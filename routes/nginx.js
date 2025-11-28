@@ -83,9 +83,9 @@ router.post('/nginx/create-site', (req, res) => {
     // proceed — existence check failed for permissions
   }
 
-  const FPM_HOST = process.env.FPM_HOST || '127.0.0.1';
-  const FPM_PORT = process.env.FPM_PORT || '9000';
-  const clientMaxBody = process.env.NGINX_CLIENT_MAX_BODY || '128m';
+  const FPM_HOST = (req.body && req.body.fpm_host) ? String(req.body.fpm_host).trim() : (process.env.FPM_HOST || '127.0.0.1');
+  const FPM_PORT = (req.body && req.body.fpm_port) ? String(req.body.fpm_port).trim() : (process.env.FPM_PORT || '9000');
+  const clientMaxBody = (req.body && req.body.client_max_body_size) ? String(req.body.client_max_body_size).trim() : (process.env.NGINX_CLIENT_MAX_BODY || '128m');
 
   const config = `server {
   listen 80;

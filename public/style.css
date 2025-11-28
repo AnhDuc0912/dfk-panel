@@ -56,6 +56,25 @@ pre.error{background:#2b0a0a;padding:1rem;border-radius:8px;color:#ffdede}
 
 textarea{min-height:420px;color:#dff3ff;background:linear-gradient(180deg,#031826,#021220);border:1px solid rgba(255,255,255,0.03);padding:1rem;border-radius:8px}
 
+/* Additional UI polish */
+.nginx-form{max-width:760px;margin-top:14px}
+.nginx-form .hint{font-size:13px;color:var(--muted);margin-bottom:8px}
+.nginx-form label{display:block;margin-top:10px;color:#cfe8ff;font-weight:600}
+.nginx-form input[type="text"], .nginx-form input[type="url"]{background:linear-gradient(180deg,#031826,#021220);border:1px solid rgba(255,255,255,0.04);padding:.6rem .7rem;border-radius:8px;color:#e8fbff}
+.nginx-form .row{display:flex;gap:10px}
+.nginx-form .row > *{flex:1}
+.hint.small{font-size:12px;color:var(--muted)}
+
+.muted{color:var(--muted)}
+.kbd{background:rgba(255,255,255,0.03);padding:3px 8px;border-radius:6px;font-family:monospace;font-size:12px}
+
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--accent);padding:.45rem .7rem;border-radius:8px}
+.btn.small{padding:.35rem .6rem;font-size:13px}
+
+/* Slightly larger, brighter code blocks for readability */
+pre.code{font-size:13.25px;line-height:1.45}
+pre.error{font-size:13px}
+
 footer{margin-top:1rem;text-align:center;color:var(--muted);font-size:.85rem}
 
 @media (max-width:720px){

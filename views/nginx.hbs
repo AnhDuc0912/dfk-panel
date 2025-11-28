@@ -1,7 +1,43 @@
 <h2>Nginx</h2>
 <p>Config path: <strong>{{nginxConfPath}}</strong></p>
-<form method="post" action="/nginx/reload" onsubmit="return confirm('Reload nginx?')">
-  <button>Reload Nginx (cmd: {{nginxReloadCmd}})</button>
+<div class="row" style="align-items:center;gap:12px;margin-bottom:10px">
+  <form method="post" action="/nginx/reload" onsubmit="return confirm('Reload nginx?')">
+    <button class="btn ghost small">Reload Nginx</button>
+  </form>
+  <div class="muted">Command: <code class="kbd">{{nginxReloadCmd}}</code></div>
+</div>
+
+<h3>Create Site</h3>
+<p class="hint">Create a new virtual host file and reload nginx. The panel will attempt to write into <code>/etc/nginx/sites-enabled</code> — set <code>NGINX_USE_SUDO=true</code> if the panel needs sudo to write there.</p>
+<form class="nginx-form panel" method="post" action="/nginx/create-site" onsubmit="return confirm('Create site and reload nginx?')">
+  <label>Domain
+    <input name="domain" type="text" required placeholder="example.com">
+  </label>
+
+  <label>Root folder
+    <input name="root" type="text" required placeholder="/data/web/example">
+  </label>
+
+  <div class="row">
+    <div>
+      <label>PHP-FPM host (optional)
+        <input name="fpm_host" type="text" placeholder="127.0.0.1">
+      </label>
+    </div>
+    <div>
+      <label>PHP-FPM port (optional)
+        <input name="fpm_port" type="text" placeholder="9000">
+      </label>
+    </div>
+  </div>
+
+  <label>Max upload body (optional)
+    <input name="client_max_body_size" type="text" placeholder="128m">
+  </label>
+
+  <div class="hint small">Tip: set <code>fpm_port</code> to match your PHP-FPM listener (e.g. 9000 or 127.0.0.1:9999).</div>
+
+  <button class="btn">Create site</button>
 </form>
 <h3>Config File</h3>
 {{#if error}}
