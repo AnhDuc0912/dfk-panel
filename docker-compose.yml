@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   dfkpanel:
     build: .
@@ -15,8 +13,9 @@ services:
       # Default host path falls back to ./repos and is mounted to the container path `/repos`.
       - "${HOST_REPO_DIR:-./repos}:/repos:rw"
       # Optionally bind a host path for NGINX_SITES_DIR if you want the panel to write there.
-      # To enable, set HOST_SITES_DIR in .env and uncomment the following line.
-      # - "${HOST_SITES_DIR}:${NGINX_SITES_DIR:-/etc/nginx/sites-enabled}"
+      # To enable, set HOST_SITES_DIR in .env (e.g. /data/dfk-panel/sites-enabled) and
+      # the following mount will bind that host path into the container.
+      - "${HOST_SITES_DIR}:${NGINX_SITES_DIR:-/etc/nginx/sites-enabled}:rw"
     # Ensure the app uses the absolute container path for repositories
     environment:
       - ROOT_DIR=/repos
