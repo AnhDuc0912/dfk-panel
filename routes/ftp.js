@@ -7,8 +7,8 @@ const { ROOT_DIR } = require('../lib/fs-utils');
 const router = express.Router();
 
 // FTP configuration from environment variables
-const FTP_USE_SUDO = ('' + (process.env.FTP_USE_SUDO || 'true')).toLowerCase() === 'true';
-const FTP_USER_HOME_BASE = process.env.FTP_USER_HOME_BASE || '/home';
+const FTP_USE_SUDO = ('' + (process.env.FTP_USE_SUDO || 'false')).toLowerCase() === 'true';
+const FTP_USER_HOME_BASE = process.env.FTP_USER_HOME_BASE || ROOT_DIR;
 
 function maybeSudo(cmd) {
   return FTP_USE_SUDO ? ('sudo ' + cmd) : cmd;
@@ -70,13 +70,46 @@ router.post('/ftp/create-user', (req, res) => {
   // Resolve folder path
   const fullFolderPath = path.resolve(folder_path);
   
-  // Create the user with restricted shell and specified home directory
-  const createUserCmd = maybeSudo(`useradd -m -d "${fullFolderPath}" -s /bin/false "${username}"`);
+  // Check if we can create users directly or need to provide manual instructions
+  const testCmd = FTP_USE_SUDO ? 'sudo id' : 'id';
   
-  exec(createUserCmd, { timeout: 15_000 }, (createErr, createOut, createErrOut) => {
-    if (createErr) {
-      return res.status(500).send(`Failed to create user: ${createErr.message}\n${createErrOut || ''}`);
+  exec(testCmd, { timeout: 5_000 }, (testErr, testOut, testErrOut) => {
+    if (testErr || (!FTP_USE_SUDO && process.getuid && process.getuid() !== 0)) {
+      // Cannot create users directly - provide manual instructions
+      const manualInstructions = [
+        `Manual FTP User Setup Required`,
+        ``,
+        `Run these commands on the host system as root:`,
+        ``,
+        `# Create user with restricted shell`,
+        `useradd -m -d "${fullFolderPath}" -s /bin/false "${username}"`,
+        ``,
+        `# Set password`,
+        `echo "${username}:${password}" | chpasswd`,
+        ``,
+        `# Create and set folder permissions`,
+        `mkdir -p "${fullFolderPath}"`,
+        `chown ${username}:${username} "${fullFolderPath}"`,
+        `chmod 755 "${fullFolderPath}"`,
+        ``,
+        `Generated credentials:`,
+        `Username: ${username}`,
+        `Password: ${password}`,
+        `Folder: ${fullFolderPath}`,
+        ``,
+        `Note: User will have shell access disabled (/bin/false) for security.`
+      ].join('\n');
+      
+      return res.send(manualInstructions);
     }
+    
+    // Try to create the user with available privileges
+    const createUserCmd = maybeSudo(`useradd -m -d "${fullFolderPath}" -s /bin/false "${username}"`);
+    
+    exec(createUserCmd, { timeout: 15_000 }, (createErr, createOut, createErrOut) => {
+      if (createErr) {
+        return res.status(500).send(`Failed to create user: ${createErr.message}\n${createErrOut || ''}`);
+      }
     
     // Set password
     const setPasswordCmd = maybeSudo(`bash -c 'echo "${username}:${password}" | chpasswd'`);
@@ -113,6 +146,7 @@ router.post('/ftp/create-user', (req, res) => {
         
         res.send(message);
       });
+    });
     });
   });
 });
