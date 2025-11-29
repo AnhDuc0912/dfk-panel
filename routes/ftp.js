@@ -77,17 +77,14 @@ router.post('/ftp/create-user', (req, res) => {
     if (testErr || (!FTP_USE_SUDO && process.getuid && process.getuid() !== 0)) {
       // Cannot create users directly - provide manual instructions
       const manualInstructions = [
-        `Manual FTP User Setup Required`,
+        `FTP User Setup - Use Helper Script`,
         ``,
-        `Run these commands on the host system as root:`,
+        `Option 1: Use the universal helper script (Recommended)`,
+        `./host/create-ftp-user.sh "${username}" "${fullFolderPath}" "${password}"`,
         ``,
-        `# Create user with restricted shell`,
+        `Option 2: Run individual commands as root:`,
         `useradd -m -d "${fullFolderPath}" -s /bin/false "${username}"`,
-        ``,
-        `# Set password`,
         `echo "${username}:${password}" | chpasswd`,
-        ``,
-        `# Create and set folder permissions`,
         `mkdir -p "${fullFolderPath}"`,
         `chown ${username}:${username} "${fullFolderPath}"`,
         `chmod 755 "${fullFolderPath}"`,
@@ -97,7 +94,9 @@ router.post('/ftp/create-user', (req, res) => {
         `Password: ${password}`,
         `Folder: ${fullFolderPath}`,
         ``,
-        `Note: User will have shell access disabled (/bin/false) for security.`
+        `Note: Helper script includes validation and error handling.`,
+        `Copy 'host/create-ftp-user.sh' to your Linux host and make it executable:`,
+        `chmod +x create-ftp-user.sh`
       ].join('\n');
       
       return res.send(manualInstructions);
