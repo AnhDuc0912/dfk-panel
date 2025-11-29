@@ -99,10 +99,10 @@ router.post('/nginx/create-site', (req, res) => {
     try_files $uri $uri/ /index.php?$args;
   }
 
-  # hardcode SCRIPT_FILENAME
-  location ~ \\.(php)$ {
+  # use $document_root for SCRIPT_FILENAME (prevents path mismatches)
+  location ~ \.(php)$ {
     include fastcgi_params;
-    fastcgi_param SCRIPT_FILENAME ${siteRoot}$fastcgi_script_name;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
     fastcgi_index index.php;
     fastcgi_pass ${FPM_HOST}:${FPM_PORT};
     fastcgi_read_timeout 300;
@@ -139,7 +139,8 @@ router.post('/nginx/create-site', (req, res) => {
         installCmds.push(`${sudoPrefix}${NGINX_TEST_CMD}`);
         installCmds.push(`${sudoPrefix}${NGINX_RELOAD_CMD} || ${sudoPrefix}${NGINX_FALLBACK_RELOAD}`);
 
-        const message = [`Automatic install failed: ${cErr.message}`, cErrOut || '', '', 'I wrote the config to a temporary file:', tmpPath, '', 'Run the following commands on the host to install and reload nginx:','', ...installCmds].join('\n');
+        const helperCmd = `sudo /usr/local/bin/dfkpanel-apply-site "${tmpPath}"`;
+        const message = [`Automatic install failed: ${cErr.message}`, cErrOut || '', '', 'I wrote the config to a temporary file:', tmpPath, '', 'Option 1 - Use helper script (if installed):','', helperCmd, '', 'Option 2 - Manual commands:','', ...installCmds].join('\n');
         return res.status(200).send(message);
       }
 

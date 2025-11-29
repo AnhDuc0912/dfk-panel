@@ -31,6 +31,7 @@ app.get('/', (req, res) => res.redirect('/browse/'));
 app.use(require('./routes/browse'));
 app.use(require('./routes/file'));
 app.use(require('./routes/nginx'));
+app.use(require('./routes/ftp'));
 
 app.listen(PORT, () => {
   console.log(`DFKPanel listening on http://localhost:${PORT}`);

@@ -1,0 +1,128 @@
+<h2>FTP User Management</h2>
+<p class="hint">Manage FTP users for folder access. Users will be created with restricted shell (/bin/false) and can only access their assigned folder via FTP.</p>
+
+{{#if error}}
+  <div class="error">{{error}}</div>
+{{/if}}
+
+<h3>Create FTP User</h3>
+<form class="panel" method="post" action="/ftp/create-user" onsubmit="return confirm('Create FTP user?')">
+  <label>Username
+    <input name="username" type="text" required placeholder="ftpuser1" pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores allowed">
+  </label>
+
+  <label>Folder Path
+    <input name="folder_path" type="text" required placeholder="{{rootDir}}/example" value="{{rootDir}}/">
+    <div class="hint small">Absolute path to the folder this FTP user should access</div>
+  </label>
+
+  <fieldset>
+    <legend>Password Settings</legend>
+    <label>
+      <input type="radio" name="password_type" value="auto" checked>
+      Auto-generate password (12 characters)
+    </label>
+    <label>
+      <input type="radio" name="password_type" value="custom">
+      Custom password
+    </label>
+    <input name="custom_password" type="text" placeholder="Enter custom password" style="margin-top:8px;display:none;">
+  </fieldset>
+
+  <button class="btn">Create FTP User</button>
+</form>
+
+<h3>Existing FTP Users</h3>
+{{#if users.length}}
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>UID</th>
+          <th>Home Directory</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each users}}
+        <tr>
+          <td><strong>{{username}}</strong></td>
+          <td>{{uid}}</td>
+          <td><code>{{home}}</code></td>
+          <td>
+            <button class="btn small ghost" onclick="changePassword('{{username}}')">Change Password</button>
+            <button class="btn small danger" onclick="deleteUser('{{username}}')">Delete</button>
+          </td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+  </div>
+{{else}}
+  <p class="muted">No FTP users found.</p>
+{{/if}}
+
+<div class="panel" style="margin-top:20px;">
+  <h4>FTP Server Requirements</h4>
+  <p class="hint small">To use FTP users, you need an FTP server installed (like vsftpd, proftpd, or pure-ftpd). Configure your FTP server to:</p>
+  <ul class="hint small">
+    <li>Allow system users to login</li>
+    <li>Restrict users to their home directories (chroot)</li>
+    <li>Accept connections on port 21 (and passive ports if needed)</li>
+  </ul>
+  <p class="hint small">Example vsftpd configuration snippet:</p>
+  <pre class="code small">local_enable=YES
+write_enable=YES
+chroot_local_user=YES
+allow_writeable_chroot=YES</pre>
+</div>
+
+<script>
+// Show/hide custom password field
+document.addEventListener('DOMContentLoaded', function() {
+  const radios = document.querySelectorAll('input[name="password_type"]');
+  const customField = document.querySelector('input[name="custom_password"]');
+  
+  radios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customField.style.display = 'block';
+        customField.required = true;
+      } else {
+        customField.style.display = 'none';
+        customField.required = false;
+        customField.value = '';
+      }
+    });
+  });
+});
+
+function changePassword(username) {
+  const newPassword = prompt(`Enter new password for user '${username}':`);
+  if (!newPassword) return;
+  
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/ftp/change-password';
+  form.innerHTML = `
+    <input type="hidden" name="username" value="${username}">
+    <input type="hidden" name="new_password" value="${newPassword}">
+  `;
+  document.body.appendChild(form);
+  form.submit();
+}
+
+function deleteUser(username) {
+  if (!confirm(`Delete FTP user '${username}' and their home directory?\n\nThis action cannot be undone!`)) {
+    return;
+  }
+  
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '/ftp/delete-user';
+  form.innerHTML = `<input type="hidden" name="username" value="${username}">`;
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>

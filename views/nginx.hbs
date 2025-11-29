@@ -39,6 +39,14 @@
 
   <button class="btn">Create site</button>
 </form>
+
+<div class="panel" style="margin-top:20px;">
+  <h4>Host Helper Script</h4>
+  <p class="hint small">If you've installed the host helper script, you can apply nginx site files with:</p>
+  <code class="kbd">sudo /usr/local/bin/dfkpanel-apply-site /path/to/site.conf</code>
+  <p class="hint small">See <code>HOST_SETUP.md</code> for installation instructions.</p>
+</div>
+
 <h3>Config File</h3>
 {{#if error}}
   <pre class="error">{{content}}</pre>
