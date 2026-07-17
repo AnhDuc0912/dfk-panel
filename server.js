@@ -33,7 +33,20 @@ app.use(require('./routes/file'));
 app.use(require('./routes/nginx'));
 app.use(require('./routes/ftp'));
 
-app.listen(PORT, () => {
+app.use((err, req, res, next) => {
+  console.error('Request error:', err);
+  if (res.headersSent) return next(err);
+  res.status(500).send('Error: ' + err.message);
+});
+
+const server = app.listen(PORT, () => {
   console.log(`DFKPanel listening on http://localhost:${PORT}`);
   console.log(`Root directory: ${ROOT_DIR}`);
 });
+
+// Large uploads over slow links can take much longer than Node's default
+// request/headers timeouts, which would otherwise abort the connection mid-transfer.
+server.requestTimeout = 0;
+server.headersTimeout = 0;
+server.timeout = 0;
+server.keepAliveTimeout = 0;
